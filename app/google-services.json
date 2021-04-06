@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1054452997943",
+    "project_id": "udailynotes",
+    "storage_bucket": "udailynotes.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1054452997943:android:00b9ebdb4eac377904c4b2",
+        "android_client_info": {
+          "package_name": "Giet.group12.udailynotes"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1054452997943-f89l16bqgblclmbajqgqol1n5kc03tct.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "Giet.group12.udailynotes",
+            "certificate_hash": "92a7d855afc7d4166393b96f9169ce81916f31b2"
+          }
+        },
+        {
+          "client_id": "1054452997943-liiv8knufcv34t0a87r9fdo543ugnjod.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAXOluCG6xoQA94Fp8cqxcne3JltMKMDio"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1054452997943-ei8i5c0auraq4hmmrrk1oup82uog3e2q.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
