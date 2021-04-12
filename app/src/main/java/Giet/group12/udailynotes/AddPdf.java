@@ -24,6 +24,7 @@ import com.google.firebase.storage.StorageTask;
 import com.google.firebase.storage.UploadTask;
 
 import java.io.File;
+import java.util.Arrays;
 
 public class AddPdf extends AppCompatActivity {
 
@@ -104,7 +105,7 @@ public class AddPdf extends AppCompatActivity {
                         progressDialog.dismiss();
                         Snackbar.make(view,
                                     "Failed " + e.getLocalizedMessage() + " " + e.getMessage(),
-                                    BaseTransientBottomBar.LENGTH_LONG).show();
+                                    BaseTransientBottomBar.LENGTH_LONG).setAction("Retry?", v -> uploadFile(view)).show();
                     })
 
                     .addOnProgressListener(snapshot -> {
@@ -149,7 +150,7 @@ public class AddPdf extends AppCompatActivity {
             if (uriString.startsWith("content://")) {
                 try (Cursor cursor = this.getContentResolver().query(uri, null, null, null, null)) {
                     if (cursor != null && cursor.moveToFirst()) {
-                        Log.d("cursor", cursor.getColumnNames().toString());
+                        Log.d("cursor", Arrays.toString(cursor.getColumnNames()));
                         fname = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
                     }
                 }
@@ -162,8 +163,6 @@ public class AddPdf extends AppCompatActivity {
             if(!fname.toLowerCase().endsWith(".pdf"))
                 fname+=".pdf";
             choose.setText(fname);
-
-
         }
     }
 }
