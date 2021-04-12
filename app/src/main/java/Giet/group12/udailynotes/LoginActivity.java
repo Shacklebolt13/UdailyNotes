@@ -110,6 +110,7 @@ public class LoginActivity extends AppCompatActivity {
             String personId = account.getId();
             Uri personPhoto = account.getPhotoUrl();
             sp.edit().putString("email",personEmail).apply();
+            sp.edit().putString("Id",personId);
             sp.edit().putBoolean("logged",true).apply();
             tv.setText(sp.getString("email","please log in"));
             Toast.makeText(this,personName+" "+personGivenName+" "+personEmail+" "+personId,Toast.LENGTH_LONG).show();
