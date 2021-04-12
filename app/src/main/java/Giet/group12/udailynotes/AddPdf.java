@@ -1,11 +1,14 @@
 package Giet.group12.udailynotes;
 
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.OpenableColumns;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -27,11 +30,14 @@ public class AddPdf extends AppCompatActivity {
 
     private static final int PICK_IMAGE_REQUEST = 13;
     Button choose,upload;
-    FirebaseStorage storage;
-    StorageReference storageReference;
+    private FirebaseStorage storage;
+    private StorageReference storageReference;
     private Uri filepath;
-    SharedPreferences sp;
-    String fname;
+    private SharedPreferences sp;
+    private String fname;
+    private StorageReference ref;
+    String id;
+    private StorageTask<UploadTask.TaskSnapshot> upload_progress;
 
 
     @Override
@@ -39,38 +45,52 @@ public class AddPdf extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_pdf);
 
-        choose= findViewById(R.id.btnChoose);
-        upload=findViewById(R.id.btnUpload);
-        storage=FirebaseStorage.getInstance();
-        storageReference=storage.getReference();
-        sp=getSharedPreferences("Udaily_Login",MODE_PRIVATE);
+        choose = findViewById(R.id.btnChoose);
+        upload = findViewById(R.id.btnUpload);
+        storage = FirebaseStorage.getInstance();
+        storageReference = storage.getReference();
+        sp = getSharedPreferences("Udaily_Login", MODE_PRIVATE);
+        id=sp.getString("Id","nullz");
 
-        choose.setOnClickListener(v -> selectImage());
+        choose.setOnClickListener(v -> selectFile());
 
-        upload.setOnClickListener(v -> uploadImage(v));
+        upload.setOnClickListener(this::checkExistsAndContinue);
     }
 
-    private void uploadImage(View view) {
+    private void checkExistsAndContinue(View v) {
+        Log.d("tag",id+":::"+ fname);
+        storageReference.child(id+":::"+ fname).getDownloadUrl()
+                .addOnFailureListener(e -> {
+                    Log.d("firebaseError",e.toString());
+                    uploadFile(v);
+                }).addOnSuccessListener(uri ->confirmAndContinue(v));
+    }
+
+    private void confirmAndContinue(View v) {
+        AlertDialog.Builder alertDialog= new AlertDialog.Builder(this);
+        alertDialog.setCancelable(false)
+                .setTitle("OverWrite?")
+                .setPositiveButton("Confirm", (dialog, which) -> {uploadFile(v);})
+                .setNegativeButton("Cancel", (dialog, which) -> {})
+                .setMessage("This will OverWrite the file in the cloud").show();
+    }
+
+    private void uploadFile(View view) {
 
         if(filepath!=null){
 
             ProgressDialog progressDialog= new ProgressDialog(this);
             progressDialog.setTitle("Uploading");
-            String msg="Uploading File at \n"+filepath;
             progressDialog.setCancelable(true);
-            StorageReference ref;
             progressDialog.setCanceledOnTouchOutside(false);
+            progressDialog.setOnCancelListener(dialog -> Snackbar.make(view,"Cancelled By User",BaseTransientBottomBar.LENGTH_LONG).setAction("Retry?", v -> uploadFile(view)).show());
 
-            progressDialog.setOnCancelListener(dialog -> Snackbar.make(view,"Cancelled By User",BaseTransientBottomBar.LENGTH_LONG).setAction("Retry?", v -> uploadImage(view)).show());
-            StorageTask<UploadTask.TaskSnapshot> upload_progress;
-            String id=sp.getString("Id","nullz");
 
             if(id=="nullz") {
                 startActivity(new Intent(getApplicationContext(), LoginActivity.class).putExtra("adding",true));
                 return;
             }
-            fname= id+":::"+ fname;
-            ref= storageReference.child(fname);
+            ref= storageReference.child( id+":::"+ fname);
             Log.d("filepath", String.valueOf(filepath));
 
             upload_progress = ref.putFile(filepath)
@@ -88,8 +108,9 @@ public class AddPdf extends AppCompatActivity {
                     })
 
                     .addOnProgressListener(snapshot -> {
-                        double progress = (100.0 * (snapshot.getBytesTransferred() / snapshot.getTotalByteCount()));
-                        progressDialog.setMessage(ref.getName() + " " + progress + " %");
+                        double progress = Math.round ( 10000.0 * ( (double)(snapshot.getBytesTransferred()) / (double)(snapshot.getTotalByteCount()) ) )/100.0;
+                        Log.d("progress", ""+progress);
+                        progressDialog.setMessage(fname + " " + progress + " %");
                     });
 
             progressDialog.setButton(DialogInterface.BUTTON_POSITIVE,"CANCEL", (dialog, which) -> {
@@ -102,8 +123,8 @@ public class AddPdf extends AppCompatActivity {
 
     }
 
-    private void selectImage() {
-        // Defining Implicit Intent to mobile gallery
+    private void selectFile() {
+
         Intent intent = new Intent();
         intent.setType("application/pdf");
         intent.setAction(Intent.ACTION_GET_CONTENT);
@@ -119,10 +140,30 @@ public class AddPdf extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
 
         if(requestCode==PICK_IMAGE_REQUEST && resultCode==RESULT_OK && data!=null && data.getData()!=null){
-            fname= new File(data.getData().getPath()).getPath();
+
+            // Get the Uri of the selected file
+            Uri uri = data.getData();
+            String uriString = uri.toString();
+            File myFile = new File(uriString);
+
+            if (uriString.startsWith("content://")) {
+                try (Cursor cursor = this.getContentResolver().query(uri, null, null, null, null)) {
+                    if (cursor != null && cursor.moveToFirst()) {
+                        Log.d("cursor", cursor.getColumnNames().toString());
+                        fname = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
+                    }
+                }
+            } else if (uriString.startsWith("file://")) {
+                fname = myFile.getName();
+            }
+
             Log.d("fname",fname);
             filepath=data.getData();
-            choose.setText(filepath.toString());
+            if(!fname.toLowerCase().endsWith(".pdf"))
+                fname+=".pdf";
+            choose.setText(fname);
+
+
         }
     }
 }
