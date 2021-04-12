@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.snackbar.BaseTransientBottomBar;
@@ -24,7 +25,7 @@ public class AddPdf extends AppCompatActivity {
     Button choose,upload;
     FirebaseStorage storage;
     StorageReference storageReference;
-    private String filepath;
+    private Uri filepath;
     SharedPreferences sp;
 
 
@@ -57,11 +58,11 @@ public class AddPdf extends AppCompatActivity {
                 startActivity(new Intent(getApplicationContext(), LoginActivity.class));
                 return;
             }
-            Log.d("filepath",filepath);
+            Log.d("filepath", String.valueOf(filepath));
             String fname=id+":::"+ UUID.randomUUID().toString();
             StorageReference ref= storageReference.child(fname);
 
-            ref.putFile(Uri.parse(filepath))
+            ref.putFile(filepath)
                     .addOnSuccessListener(taskSnapshot -> {
                         progressDialog.dismiss();
                         Snackbar.make(getApplicationContext(),
@@ -97,6 +98,15 @@ public class AddPdf extends AppCompatActivity {
                         intent,
                         "Select Image from here..."),
                 PICK_IMAGE_REQUEST);
+    }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if(requestCode==PICK_IMAGE_REQUEST && resultCode==RESULT_OK && data!=null && data.getData()!=null){
+            filepath=data.getData();
+            choose.setText(filepath.toString());
+        }
     }
 }
