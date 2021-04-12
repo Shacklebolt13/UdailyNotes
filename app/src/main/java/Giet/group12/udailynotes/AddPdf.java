@@ -1,11 +1,13 @@
 package Giet.group12.udailynotes;
 
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 
 import androidx.annotation.Nullable;
@@ -15,8 +17,10 @@ import com.google.android.material.snackbar.BaseTransientBottomBar;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.StorageTask;
+import com.google.firebase.storage.UploadTask;
 
-import java.util.UUID;
+import java.io.File;
 
 public class AddPdf extends AppCompatActivity {
 
@@ -27,6 +31,7 @@ public class AddPdf extends AppCompatActivity {
     StorageReference storageReference;
     private Uri filepath;
     SharedPreferences sp;
+    String fname;
 
 
     @Override
@@ -38,52 +43,61 @@ public class AddPdf extends AppCompatActivity {
         upload=findViewById(R.id.btnUpload);
         storage=FirebaseStorage.getInstance();
         storageReference=storage.getReference();
-        sp=getSharedPreferences("Udaily Login",MODE_PRIVATE);
-
-
+        sp=getSharedPreferences("Udaily_Login",MODE_PRIVATE);
 
         choose.setOnClickListener(v -> selectImage());
 
-        upload.setOnClickListener(v -> uploadImage());
+        upload.setOnClickListener(v -> uploadImage(v));
     }
 
-    private void uploadImage() {
+    private void uploadImage(View view) {
 
         if(filepath!=null){
+
             ProgressDialog progressDialog= new ProgressDialog(this);
-            progressDialog.setTitle("Uploading File at \n"+filepath);
-            progressDialog.show();
+            progressDialog.setTitle("Uploading");
+            String msg="Uploading File at \n"+filepath;
+            progressDialog.setCancelable(true);
+            StorageReference ref;
+            progressDialog.setCanceledOnTouchOutside(false);
+
+            progressDialog.setOnCancelListener(dialog -> Snackbar.make(view,"Cancelled By User",BaseTransientBottomBar.LENGTH_LONG).setAction("Retry?", v -> uploadImage(view)).show());
+            StorageTask<UploadTask.TaskSnapshot> upload_progress;
             String id=sp.getString("Id","nullz");
+
             if(id=="nullz") {
-                startActivity(new Intent(getApplicationContext(), LoginActivity.class));
+                startActivity(new Intent(getApplicationContext(), LoginActivity.class).putExtra("adding",true));
                 return;
             }
+            fname= id+":::"+ fname;
+            ref= storageReference.child(fname);
             Log.d("filepath", String.valueOf(filepath));
-            String fname=id+":::"+ UUID.randomUUID().toString();
-            StorageReference ref= storageReference.child(fname);
 
-            ref.putFile(filepath)
+            upload_progress = ref.putFile(filepath)
                     .addOnSuccessListener(taskSnapshot -> {
                         progressDialog.dismiss();
-                        Snackbar.make(getApplicationContext(),
-                                null,
-                                "Upload Complete",
-                                BaseTransientBottomBar.LENGTH_SHORT).show();
+                        startActivity(new Intent(getApplicationContext(), Discover.class).putExtra("uploaded",true));
+                        finish();
                     })
 
                     .addOnFailureListener(e -> {
-                    progressDialog.dismiss();
-                        Snackbar.make(getApplicationContext(),
-                                null,
-                                "Failed "+e.getLocalizedMessage()+" "+e.getMessage(),
-                                BaseTransientBottomBar.LENGTH_LONG).show();
-
+                        progressDialog.dismiss();
+                        Snackbar.make(view,
+                                    "Failed " + e.getLocalizedMessage() + " " + e.getMessage(),
+                                    BaseTransientBottomBar.LENGTH_LONG).show();
                     })
+
                     .addOnProgressListener(snapshot -> {
-                        Double progress=(100.0*(snapshot.getBytesTransferred()/snapshot.getTotalByteCount()));
-                        progressDialog.setMessage("Uploaded "+(Math.round(progress*100.0)/100.0)+" %");
+                        double progress = (100.0 * (snapshot.getBytesTransferred() / snapshot.getTotalByteCount()));
+                        progressDialog.setMessage(ref.getName() + " " + progress + " %");
                     });
 
+            progressDialog.setButton(DialogInterface.BUTTON_POSITIVE,"CANCEL", (dialog, which) -> {
+                upload_progress.cancel();
+                progressDialog.cancel();
+            });
+
+            progressDialog.show();
         }
 
     }
@@ -105,6 +119,8 @@ public class AddPdf extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
 
         if(requestCode==PICK_IMAGE_REQUEST && resultCode==RESULT_OK && data!=null && data.getData()!=null){
+            fname= new File(data.getData().getPath()).getPath();
+            Log.d("fname",fname);
             filepath=data.getData();
             choose.setText(filepath.toString());
         }

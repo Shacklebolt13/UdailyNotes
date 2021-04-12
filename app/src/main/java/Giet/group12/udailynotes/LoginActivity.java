@@ -114,7 +114,8 @@ public class LoginActivity extends AppCompatActivity {
             sp.edit().putBoolean("logged",true).apply();
             tv.setText(sp.getString("email","please log in"));
             Toast.makeText(this,personName+" "+personGivenName+" "+personEmail+" "+personId,Toast.LENGTH_LONG).show();
-            startActivity(new Intent(LoginActivity.this,Discover.class));
+            if(!getIntent().getBooleanExtra("adding",false))
+                startActivity(new Intent(LoginActivity.this,Discover.class));
             finish();
         }
     }
