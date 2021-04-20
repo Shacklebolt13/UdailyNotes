@@ -13,7 +13,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.UdailyNotes">
-        <activity android:name=".AddPdf"/>
+        <activity
+            android:name=".Discover"
+            android:label="@string/title_activity_discover"
+            android:theme="@style/Theme.UdailyNotes.NoActionBar"></activity>
+        <activity android:name=".AddPdf" />
         <activity android:name=".ViewPdf" />
         <activity android:name=".MainActivity">
             <intent-filter>
@@ -22,10 +26,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".Discover"
-            android:label="@string/title_activity_discover"
-            android:theme="@style/Theme.UdailyNotes.NoActionBar" />
         <activity android:name=".LoginActivity" />
     </application>
 
